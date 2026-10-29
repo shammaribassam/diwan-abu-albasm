@@ -8,6 +8,7 @@ function log(name,msg){state.chat.push([name,msg]);state.chat=state.chat.slice(-
 function handle(name,msg,platform="twitch"){name=String(name||'').trim();msg=String(msg||'').trim();if(!name)return;log(name,msg);const id=platform+":"+name.toLowerCase();
 if(/^!انضم$/u.test(msg)){if(!state.joined[id]){state.joined[id]=name;state.scores[id]=0;broadcast()}return}
 if(!state.joined[id]||!state.active||state.correct<0)return;
+if(state.exclusions?.[id]&&state.round<state.exclusions[id].untilRound)return;
 if(!/^[1-4١٢٣٤]$/.test(msg))return;
 let n='١٢٣٤'.includes(msg)?'١٢٣٤'.indexOf(msg)+1:Number(msg);
 if(answeredThisRound.has(id))return;
@@ -20,7 +21,7 @@ function finish(){clearInterval(tick);tick=null;if(state.active){state.active=fa
 function next(){finish();answeredThisRound.clear();let cat=$('cat').value.split(' — ')[0];let pool=questions.filter(q=>cat==='الكل'||q[0]===cat);
 let available=pool.filter(q=>!state.seen.includes(q[1]));if(!available.length){const poolKeys=new Set(pool.map(q=>q[1]));state.seen=state.seen.filter(x=>!poolKeys.has(x));available=pool}
 let q=available[Math.floor(Math.random()*available.length)];if(!q)return;
-state.seen.push(q[1]);state.round++;state.category=q[0];state.question=q[1];state.answers=q.slice(2,6);state.correct=q[6];state.remaining=30;state.winners=[];state.active=false;state.revealed=false;broadcast();notice('السؤال جاهز — اضغط بدء الجولة')}
+state.seen.push(q[1]);state.round++;for(const [id,e] of Object.entries(state.exclusions||{})){if(state.round>=e.untilRound)delete state.exclusions[id]};state.category=q[0];state.question=q[1];state.answers=q.slice(2,6);state.correct=q[6];state.remaining=30;state.winners=[];state.active=false;state.revealed=false;broadcast();notice('السؤال جاهز — اضغط بدء الجولة')}
 function start(){if(!state.round)next();if(state.active)return;answeredThisRound.clear();state.winners=[];state.remaining=30;state.active=true;state.revealed=false;broadcast();$('start').disabled=true;notice('الجولة جارية');tick=setInterval(()=>{if(!state.active){clearInterval(tick);return}state.remaining--;if(state.remaining<=0){state.remaining=0;finish()}else broadcast()},1000)}
 $('next').onclick=next;$('start').onclick=start;$('stop').onclick=finish;
 $('reset').onclick=()=>{if(confirm('تصفير جميع النقاط والمشاركين؟')){state.joined={};state.scores={};state.winners=[];broadcast()}};
@@ -37,3 +38,26 @@ s.onerror=()=>{$('connection').textContent='فشل اتصال Twitch'};s.onclose
 render();
 
 function receive(name,msg,platform){handle(name,msg,platform||'tiktok')}
+
+// Host-only exclusion controls. Audio plays in the streamer tab (capture its audio in OBS).
+const exileAudio=[1,2,3].map(n=>new Audio('exile-'+n+'.mp3'));
+exileAudio.forEach(a=>a.preload='auto');
+let lastExile=-1;
+function exilePlayer(){
+ const id=$('exilePlayer').value, duration=Number($('exileDuration').value);
+ if(!id||!state.joined[id])return notice('اختر مشاركًا أولًا');
+ state.exclusions ||= {};
+ state.exclusions[id]={untilRound:Math.max(1,state.round)+duration};
+ state.exileEvent={name:state.joined[id],duration,at:Date.now(),seq:(state.exileEvent?.seq||0)+1};
+ let n=Math.floor(Math.random()*3);if(n===lastExile)n=(n+1+Math.floor(Math.random()*2))%3;lastExile=n;
+ exileAudio.forEach(a=>{a.pause();a.currentTime=0});
+ exileAudio[n].play().catch(()=>notice('تم الاستبعاد؛ اضغط على الصفحة لتفعيل الصوت في المتصفح'));
+ broadcast();notice('تم استبعاد '+state.joined[id]+' لمدة '+duration+' جولة');
+}
+$('exileButton').onclick=exilePlayer;
+$('restoreButton').onclick=()=>{const id=$('exilePlayer').value;if(!id)return;delete state.exclusions[id];broadcast();notice('تمت إعادة '+(state.joined[id]||'المشارك'))};
+const previousRender=render;
+render=function(){previousRender();const el=$('exilePlayer'),selected=el.value;
+ el.innerHTML='<option value="">اختر مشاركًا</option>'+Object.keys(state.joined).map(id=>'<option value="'+escapeHtml(id)+'">'+escapeHtml(state.joined[id])+'</option>').join('');el.value=selected;
+};
+render();

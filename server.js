@@ -2,7 +2,7 @@
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
 const {handler:tiktokHandler,stopRoom}=require('./tiktok-server');
 const root=__dirname,port=Number(process.env.PORT||3000),rooms=new Map();
-const types={'.html':'text/html; charset=utf-8','.js':'application/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.webp':'image/webp','.png':'image/png','.txt':'text/plain; charset=utf-8'};
+const types={'.html':'text/html; charset=utf-8','.js':'application/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.webp':'image/webp','.png':'image/png','.mp3':'audio/mpeg','.txt':'text/plain; charset=utf-8'};
 const roomPattern=/^[a-f0-9-]{36}$/i;
 function send(res,status,body,type='text/plain; charset=utf-8'){res.writeHead(status,{'Content-Type':type,'Cache-Control':'no-store'});res.end(body)}
 function json(res,status,obj){send(res,status,JSON.stringify(obj),'application/json; charset=utf-8')}
