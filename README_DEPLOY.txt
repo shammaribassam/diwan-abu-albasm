@@ -4,7 +4,7 @@
 2. Render > New Web Service > اربط المستودع الجديد.
 3. Build Command: npm install
 4. Start Command: npm start
-5. افتح /streamer.html للتحكم، واربط Twitch وTikTok من نفس الصفحة.
+5. افتح /streamer.html للتحكم، واربط Twitch وTikTok وKick من نفس الصفحة (تفاصيل Kick في KICK_SETUP_AR.txt).
 6. انسخ رابط OBS من لوحة الستريمر وضعه Browser Source في OBS.
 7. المشاركة: !انضم ثم 1 أو 2 أو 3 أو 4. أول إجابة فقط لكل شخص في الجولة.
 
