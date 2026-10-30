@@ -4,4 +4,18 @@
   <p id="bonusClaim" hidden></p><p id="bonusPublicPrompt" class="bonus-question" hidden></p>
   <p id="bonusCountdown" hidden></p><p id="bonusAnswer" class="bonus-response" hidden></p>
  </section><h2>الفائزون بهذه الجولة</h2><div id="winners" class="winners"></div></section>
-<section class="box"><img class="portrait" src="poet.png" alt="صاحب الديوان"><h2>فرسان الديوان</h2><div id="leaders"></div><h2>رسائل المجلس</h2><div id="chat" class="chat"></div><p class="muted">هذه صفحة مشاهدة فقط؛ التحكم والأسئلة من صفحة الستريمر، والإجابة تكون في شات Twitch أو TikTok أو Kick.</p></section></main><script src="shared.js"></script><script src="cloud-sync.js"></script><script>render()</script></body></html>
+<section class="box"><img class="portrait" src="poet.png?v=20261031portrait" alt="صاحب الديوان"><h2>فرسان الديوان</h2><div id="leaders"></div><h2>رسائل المجلس</h2><div id="chat" class="chat"></div><p class="muted">هذه صفحة مشاهدة فقط؛ التحكم والأسئلة من صفحة الستريمر، والإجابة تكون في شات Twitch أو TikTok أو Kick.</p></section></main>
+<section id="championPanel" class="champion-screen" role="status" aria-live="assertive" hidden>
+ <div class="champion-card">
+  <span class="champion-ornament" aria-hidden="true">۞ ✦ ۞</span>
+  <p class="champion-kicker">انتهت مسابقة ديوان أبو البسم</p>
+  <div class="champion-crown" aria-hidden="true">🏆</div>
+  <h2>الشاعر النابغة</h2>
+  <p class="champion-label">بطل الديوان</p>
+  <div id="championName" class="champion-name"></div>
+  <p id="championPoints" class="champion-score"></p>
+  <span id="championPlatform" class="champion-platform"></span>
+  <p class="champion-message">بلغ المئة وتوّج بجدارة</p>
+  <button id="newCompetition" class="champion-new" type="button" hidden>مسابقة جديدة — تصفير النقاط</button>
+ </div>
+</section><script src="shared.js"></script><script src="cloud-sync.js"></script><script>render()</script></body></html>

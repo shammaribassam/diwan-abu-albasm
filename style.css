@@ -17,3 +17,22 @@ button,input,select,textarea{font:600 15px Cairo;padding:10px 12px;border-radius
 .host-answer{margin:16px 0 8px;padding:14px 16px;background:#244b43;border:2px solid #b4a06d;border-radius:12px;color:#fbefca;font:700 23px/1.6 Amiri;text-align:center;box-shadow:0 3px 12px #07171b40}
 .paper .answer.host-correct{background:#d3e5d4;border:2px solid #4b7a60;box-shadow:inset 4px 0 0 #4b7a60}
 #pointsCurrent{margin:8px 0}
+
+
+/* Competition ends immediately when a contestant reaches 100 points. */
+.champion-screen{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;overflow:auto;
+ background:radial-gradient(circle at 50% 25%,#29423a 0%,#101c26 60%,#0b151e 100%);padding:24px;color:#f6eedc}
+.champion-screen[hidden]{display:none!important}
+.champion-screen:before{content:'۞';position:absolute;top:4%;right:7%;color:#c6a36c33;font:100px Amiri,serif}
+.champion-card{width:min(100%,700px);text-align:center;padding:clamp(24px,5vw,56px);border:2px solid #c6a36c;
+ outline:6px double #9e8358;border-radius:22px;background:linear-gradient(165deg,#233b3b,#162b34 75%);box-shadow:0 20px 80px #0009}
+.champion-ornament{color:#c6a36c;font:28px Amiri,serif;letter-spacing:8px}
+.champion-kicker{font:24px Amiri,serif;color:#e3d4b7;margin:12px 0}
+.champion-crown{font-size:70px;line-height:1.5}
+.champion-card h2{font:700 clamp(44px,7vw,78px) Amiri,serif;color:#e2c690;margin:0;border:0}
+.champion-label{color:#c9b68e;font:27px Amiri,serif;margin:10px 0 0}
+.champion-name{font:700 clamp(34px,5vw,60px) Amiri,serif;color:#fff3d2;overflow-wrap:anywhere;margin:14px 0}
+.champion-score{display:inline-block;border:1px solid #baa36e;background:#34493e;padding:8px 28px;border-radius:999px;font:700 27px Cairo,sans-serif;color:#ffebb3;margin:0}
+.champion-platform{display:block;color:#c9b68e;margin:12px 0}
+.champion-message{font:24px Amiri,serif;margin:12px 0 20px}
+.champion-new{background:#526f61;border:1px solid #e2c690;padding:12px 32px;color:white;font-weight:700}

@@ -2,6 +2,30 @@
 const cats=[...new Set(questions.map(q=>q[0]))];
 $('cat').innerHTML=`<option value="الكل">كل الفئات — ${questions.length} سؤال</option>`+cats.map(c=>`<option>${c} — ${questions.filter(q=>q[0]===c).length} سؤالًا</option>`).join('');
 function notice(s){$('gameStatus').textContent=s}
+const WIN_TARGET=100;
+// Called immediately after ANY score increase (correct answer, bonus, or host adjustment).
+// One competition stops at the first player to reach at least 100 points.
+function checkVictory(id){
+ if(state.gameOver||!id||!state.joined[id]||(Number(state.scores[id])||0)<WIN_TARGET)return false;
+ clearInterval(tick);tick=null;stopBonusTimer();
+ state.active=false;state.revealed=true;state.remaining=0;
+ state.gameOver=true;
+ state.champion={id,name:state.joined[id],platform:id.split(':')[0],score:state.scores[id],title:'الشاعر النابغة'};
+ return true;
+}
+function newCompetition(keepPlayers=true){
+ clearInterval(tick);tick=null;answeredThisRound.clear();resetBonus();
+ const members=keepPlayers?{...state.joined}:{};
+ state.joined=members;
+ state.scores=Object.fromEntries(Object.keys(members).map(id=>[id,0]));
+ state.round=0;state.category='';state.question='';state.answers=[];state.correct=-1;
+ state.active=false;state.revealed=false;state.remaining=20;state.winners=[];
+ state.seen=[];state.exclusions={};state.exileEvent=null;
+ state.champion=null;state.gameOver=false;
+ $('start').disabled=false;
+ broadcast();notice('مسابقة جديدة جاهزة؛ جميع النقاط صفر. اضغط بدء المسابقة.');
+}
+
 let ws=null,tick=null;
 const answeredThisRound=new Set();
 let bonusTimer=null,bonusPrivateCandidates=[],bonusTarget=null,currentBonusPoemKey='',currentBonusVerse=-1;
@@ -34,7 +58,7 @@ function availableBonusLines(){const entry=bonusPoems[currentBonusPoemKey];if(!e
  return data.filter(v=>v.index!==currentBonusVerse&& !currentHalf.includes(normalizeArabic(v.first)) && normalizeArabic(v.second)!==currentAnswer).slice(0,5);
 }
 function openBonus(){
- if(state.category!=='أكمل البيت'||state.active||!state.winners.length||state.bonus?.phase!=='idle')return notice('البونص متاح فقط بعد نهاية سؤال أكمل البيت ووجود فائز.');
+ if(state.gameOver||state.category!=='أكمل البيت'||state.active||!state.winners.length||state.bonus?.phase!=='idle')return notice('البونص متاح فقط بعد نهاية سؤال أكمل البيت ووجود فائز.');
  const candidates=availableBonusLines();if(candidates.length<4)return notice('لا توجد أبيات إضافية موثقة لهذا السؤال؛ لن نفتح بونص بلا إجابة صحيحة.');
  bonusPrivateCandidates=candidates;bonusTarget=candidates[Math.floor(Math.random()*candidates.length)];
  state.bonus={phase:'claiming',prompt:'',claimant:null,response:'',seconds:20};
@@ -42,7 +66,9 @@ function openBonus(){
 }
 function awardBonus(){const b=state.bonus;if(!b||b.phase==='awarded'||!b.claimant)return false;
  stopBonusTimer();state.scores[b.claimant]=(state.scores[b.claimant]||0)+10;b.phase='awarded';
- log('النظام',(state.joined[b.claimant]||'المشارك')+' حصل على 10 نقاط بونص');broadcast();return true;
+ const won=checkVictory(b.claimant);
+ log('النظام',(state.joined[b.claimant]||'المشارك')+(won?' وصل إلى 100 نقطة وفاز بلقب الشاعر النابغة!':' حصل على 10 نقاط بونص'));
+ broadcast();return true;
 }
 function judgeBonus(accepted){const b=state.bonus;if(!b||b.phase!=='rejected'||!b.response)return;
  if(accepted){if(confirm('هل تحققت من صحة رواية بديلة لهذا البيت؟ ستُضاف 10 نقاط مرة واحدة فقط.')){awardBonus();notice('اعتمد الستريمر رواية صحيحة: +10 نقاط')}}
@@ -53,7 +79,7 @@ $('bonusReject').onclick=()=>judgeBonus(false);
 $('bonusCancel').onclick=()=>{if(state.bonus?.phase==='idle')return;stopBonusTimer();state.bonus.phase='cancelled';broadcast();notice('تم إلغاء البونص')};
 
 function log(name,msg){state.chat.push([name,msg]);state.chat=state.chat.slice(-100);broadcast()}
-function handle(name,msg,platform="twitch"){name=String(name||'').trim();msg=String(msg||'').trim();if(!name)return;log(name,msg);const id=platform+":"+name.toLowerCase();
+function handle(name,msg,platform="twitch"){name=String(name||'').trim();msg=String(msg||'').trim();if(!name||state.gameOver)return;log(name,msg);const id=platform+":"+name.toLowerCase();
 if(/^!?انضم$/u.test(msg)){if(!state.joined[id]){state.joined[id]=name;state.scores[id]=0;broadcast()}return}
 // Reserve bonus exclusively for one of the top three winners in the completed verse question.
 if(state.bonus?.phase==='claiming'&&state.winners.includes(id)&&/^!?بون[سص]$/u.test(msg)){
@@ -85,17 +111,22 @@ let n='١٢٣٤'.includes(msg)?'١٢٣٤'.indexOf(msg)+1:Number(msg);
 if(answeredThisRound.has(id))return;
 answeredThisRound.add(id);
 if(n-1!==state.correct)return;
-if(state.winners.length<3){const pts=[10,7,5][state.winners.length];state.winners.push(id);state.scores[id]=(state.scores[id]||0)+pts;broadcast();log('النظام',`${name} حصل على ${pts} نقاط`)}
+if(state.winners.length<3){const pts=[10,7,5][state.winners.length];state.winners.push(id);state.scores[id]=(state.scores[id]||0)+pts;
+ const won=checkVictory(id);
+ broadcast();log('النظام',won?`${name} وصل إلى ${state.scores[id]} نقطة وتُوّج بالشاعر النابغة!`:`${name} حصل على ${pts} نقاط`);
+ if(won){notice('🏆 الفائز: '+state.joined[id]+' — الشاعر النابغة');return}
+}
 if(state.winners.length>=3)finish()
 }
 // One continuous competition: "Next question" also starts its 20-second timer.
 // The results remain visible after each question so the host can open a poem bonus.
 function finish(){
+ if(state.gameOver)return;
  clearInterval(tick);tick=null;
  if(state.active){state.active=false;state.revealed=true;broadcast();notice('انتهى السؤال. افتح البونص إن توفر، أو اضغط السؤال التالي للمتابعة مباشرة.');}
 }
 function runQuestion(){
- if(state.active)return;
+ if(state.gameOver||state.active)return;
  state.active=true;state.revealed=false;state.remaining=20;
  $('start').disabled=true;
  broadcast();notice('السؤال '+state.round+' جارٍ — 20 ثانية');
@@ -107,6 +138,7 @@ function runQuestion(){
  },1000);
 }
 function next(){
+ if(state.gameOver)return notice('انتهت المسابقة بفوز '+state.champion.name+'؛ اضغط «مسابقة جديدة» للبدء من الصفر.');
  finish();answeredThisRound.clear();
  const cat=$('cat').value.split(' — ')[0];
  const pool=questions.filter(q=>cat==='الكل'||q[0]===cat);
@@ -123,11 +155,13 @@ function next(){
  runQuestion();
 }
 function start(){
+ if(state.gameOver)return notice('المسابقة منتهية؛ اضغط «مسابقة جديدة».');
  if(state.round>0)return notice('المسابقة مستمرة؛ اضغط «السؤال التالي» لبدء السؤال الجديد تلقائيًا.');
  next();
 }
 $('next').onclick=next;$('start').onclick=start;$('stop').onclick=finish;
-$('reset').onclick=()=>{if(confirm('تصفير جميع النقاط والمشاركين؟')){state.joined={};state.scores={};state.winners=[];broadcast()}};
+$('reset').onclick=()=>{if(confirm('تصفير جميع النقاط والمشاركين وبدء مسابقة جديدة؟'))newCompetition(false)};
+$('newCompetition').onclick=()=>{if(confirm('بدء مسابقة جديدة؟ ستُصفّر النقاط مع إبقاء المشاركين مسجلين.'))newCompetition(true)};
 $('send').onclick=()=>{handle($('tester').value,$('testmsg').value,'test');$('testmsg').value=''};
 $('testmsg').onkeydown=e=>{if(e.key==='Enter')$('send').click()};
 function disconnect(){if(ws){ws.onclose=null;ws.close();ws=null}$('connection').textContent='غير متصل'}
@@ -147,6 +181,7 @@ const exileAudio=[1,2,3].map(n=>new Audio('exile-'+n+'.mp3'));
 exileAudio.forEach(a=>a.preload='auto');
 let lastExile=-1;
 function exilePlayer(){
+ if(state.gameOver)return notice('انتهت المسابقة؛ لا يمكن تغيير المشاركين حتى تبدأ مسابقة جديدة.');
  const id=$('exilePlayer').value, duration=Number($('exileDuration').value);
  if(!id||!state.joined[id])return notice('اختر مشاركًا أولًا');
  state.exclusions ||= {};
@@ -161,12 +196,15 @@ $('exileButton').onclick=exilePlayer;
 $('restoreButton').onclick=()=>{const id=$('exilePlayer').value;if(!id)return;delete state.exclusions[id];broadcast();notice('تمت إعادة '+(state.joined[id]||'المشارك'))};
 // Streamer-only score editing. All platforms share one leaderboard but identities remain platform-scoped.
 function changePoints(direction){
+ if(state.gameOver)return notice('انتهت المسابقة؛ لا يمكن تغيير النقاط بعد إعلان الفائز.');
  const id=$('pointsPlayer').value,amount=Number($('pointsAmount').value);
  if(!id||!Object.prototype.hasOwnProperty.call(state.joined,id))return notice('اختر مشاركًا لتعديل نقاطه.');
  if(!Number.isSafeInteger(amount)||amount<1||amount>1000)return notice('أدخل عدد نقاط صحيحًا من 1 إلى 1000.');
  const previous=Number(state.scores[id])||0;
  state.scores[id]=Math.max(0,previous+(direction*amount));
- broadcast();notice((direction>0?'أُضيفت ':'خُصمت ')+amount+' نقطة '+(direction>0?'إلى ':'من ')+(state.joined[id]||id)+'؛ رصيده الآن '+state.scores[id]);
+ const won=checkVictory(id);
+ broadcast();if(won){notice('🏆 الفائز: '+state.joined[id]+' — الشاعر النابغة');return;}
+ notice((direction>0?'أُضيفت ':'خُصمت ')+amount+' نقطة '+(direction>0?'إلى ':'من ')+(state.joined[id]||id)+'؛ رصيده الآن '+state.scores[id]);
 }
 $('pointsAdd').onclick=()=>changePoints(1);
 $('pointsDeduct').onclick=()=>changePoints(-1);
