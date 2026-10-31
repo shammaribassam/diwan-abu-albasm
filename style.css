@@ -29,3 +29,14 @@ button,input,select,textarea{font:600 15px Cairo;padding:10px 12px;border-radius
 .diwan-audio-controls input[type=range]{min-width:110px;max-width:240px;flex:1 1 125px;height:22px;padding:0;accent-color:#c6a36c;border:0;background:transparent;cursor:pointer}
 .diwan-audio-controls output{font-size:13px;min-width:35px;direction:ltr;text-align:center;font-variant-numeric:tabular-nums}
 @media(max-width:740px){.diwan-audio-player{margin:8px 10px 14px}.diwan-audio-heading{display:block}.diwan-audio-heading small{display:block}.diwan-audio-controls{gap:7px}}
+
+
+/* تحديث صفحة المتابعين: الصورة أكبر، والسؤال والبونص دون رسائل المجلس أو قائمة فائزي الجولة. */
+.viewer .layout{grid-template-columns:minmax(0,1.38fr) minmax(340px,1fr);gap:22px;max-width:1700px;align-items:start}
+.viewer .viewer-portrait-panel{padding:20px 20px 24px}
+.viewer .viewer-portrait-panel .portrait{display:block;width:100%;max-width:550px;height:clamp(360px,33vw,490px);margin:0 auto 16px;object-fit:cover;object-position:center 30%;border-radius:24px;border:2px solid var(--gold);filter:saturate(.94)}
+.viewer .viewer-portrait-panel h2{margin-top:18px}
+.viewer .viewer-guidance{text-align:center;padding-top:12px;border-top:1px solid #9d895644;margin-top:18px}
+.viewer .viewer-question-panel .bonus-view{margin-top:18px}
+@media(max-width:1000px){.viewer .layout{grid-template-columns:minmax(0,1fr) minmax(290px,.82fr);gap:14px}.viewer .viewer-portrait-panel .portrait{height:clamp(330px,38vw,460px)}}
+@media(max-width:740px){.viewer .layout{grid-template-columns:minmax(0,1fr);gap:12px}.viewer .viewer-question-panel{order:1}.viewer .viewer-portrait-panel{order:0}.viewer .viewer-portrait-panel .portrait{height:360px;max-width:460px}}
