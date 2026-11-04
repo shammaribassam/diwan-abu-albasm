@@ -117,7 +117,15 @@ function next(){
  resetBonus();currentBonusPoemKey=q[8]||'';currentBonusVerse=Number.isInteger(q[9])?q[9]:-1;
  state.seen.push(q[1]);state.round++;
  for(const [id,e] of Object.entries(state.exclusions||{})){if(state.round>=e.untilRound)delete state.exclusions[id]}
- state.category=q[0];state.question=q[1];state.answers=q.slice(2,6);state.correct=q[6];
+ state.category=q[0];state.question=q[1];
+ // Shuffle answer texts and track the correct answer's new position.
+ const shuffled=q.slice(2,6).map((answer,index)=>({answer,index}));
+ for(let i=shuffled.length-1;i>0;i--){
+  const j=Math.floor(Math.random()*(i+1));
+  [shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];
+ }
+ state.answers=shuffled.map(item=>item.answer);
+ state.correct=shuffled.findIndex(item=>item.index===q[6]);
  state.remaining=20;state.winners=[];state.active=false;state.revealed=false;
  // No separate "change round" or "start round" click is needed after this.
  runQuestion();
